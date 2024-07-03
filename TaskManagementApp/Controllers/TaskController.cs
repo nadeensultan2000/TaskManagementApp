@@ -62,7 +62,10 @@ namespace TaskManagementApp.Controllers
             var claimsIdentity = (ClaimsIdentity)User.Identity;
             var claim=claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
             task.UserId = claim.Value;
-           
+           if (task.Deadline <= DateTime.Now)
+      {
+            ModelState.AddModelError("Deadline", "Deadline can't be before now");
+     }
    
             if (ModelState.IsValid)
             {
@@ -96,7 +99,10 @@ namespace TaskManagementApp.Controllers
             var claimsIdentity = (ClaimsIdentity)User.Identity;
             var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
             task.UserId = claim.Value;
-          
+          if (task.Deadline <= DateTime.Now)
+          {
+              ModelState.AddModelError("Deadline", "Deadline can't be before now");
+          }
             if (ModelState.IsValid)
             {
                 context.Tasks.Update(task);
