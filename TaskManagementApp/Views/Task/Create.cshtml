@@ -1,0 +1,108 @@
+﻿@model TaskManagementApp.Models.ToDoTask
+
+@{
+    ViewData["Title"] = "Create";
+}
+<center>
+<h1 style="color:white">Add Your Task</h1>
+
+<hr />
+<div class="row">
+
+ <center>
+    <div class="col-md-4">
+                <form id="taskForm" style="background-color:white;padding:30px;border-radius:10px;" asp-action="Create" method="post">
+         
+            
+            <div class="form-group">
+                
+                <input asp-for="Name" placeholder="Task Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+           <br />
+            <div class="form-group">
+               
+                        <textarea asp-for="Description" placeholder="Description" class="form-control"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+           <br />
+            <div class="form-group">
+                <label asp-for="Deadline" class="control-label"></label>
+                        <input type="datetime-local" asp-for="Deadline" min="@DateTime.Now" class="form-control" />
+                        <span asp-validation-for="Deadline" class="text-danger"></span>
+            </div>
+          <br />
+            <div class="form-group">
+                
+                <select asp-for="PriorityId" asp-items="@ViewBag.priorityList" placeholder="select" class="form-control">
+                            <option value="@null">Select Priority</option>
+                </select>
+                <span asp-validation-for="PriorityId" class="text-danger"></span>
+
+            </div>
+            <br />
+           
+            <div class="form-group">
+                        <input type="submit" value="Save" style="background-color:#8151a9" class="btn btn-secondary" />
+            </div>
+        </form>
+            </div>
+            </center>
+    </div>
+
+
+<div>
+    <a asp-action="Index">Back to Tasks</a>
+</div>
+</center>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        //save function
+        $(document).ready(function () {
+            $('#taskForm').submit(function (e) {
+                e.preventDefault();
+
+                var formData = new FormData(this);
+
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("Create", "Task")",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        if (data.success) {
+                            Swal.fire(
+                                'Success!',
+                                data.message,
+                                'success'
+                            ).then(() => {
+                                window.location.href = data.redirectUrl;
+                            });
+                        } else {
+                           
+                            Swal.fire(
+                                'Error!',
+                                errorMessage,
+                                'error'
+                            );
+                        }
+                    },
+                    error: function () {
+                        Swal.fire(
+                            'Error!',
+                            'There was an error saving the task.',
+                            'error'
+                        );
+                        location.reload();
+
+                    }
+                });
+            });
+        });
+    </script>
+}

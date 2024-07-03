@@ -1,0 +1,252 @@
+﻿@model IEnumerable<ToDoTask>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<div class="form-group">
+    <label for="taskFilter">Filter Tasks:</label>
+    <select class="form-control" id="taskFilter" name="taskFilter" onchange="filterTasks()">
+        <option value="">--Filter by--</option>
+        <option value="AllTasks">All Tasks</option>
+        <option value="completed">Completed Tasks</option>
+        <option value="notCompleted">Not Completed Tasks</option>
+
+    </select>
+</div>
+<br />
+<br />
+<br />
+
+<a href="/Task/Create" class="btn btn-outline-light">
+    <i class="fa-solid fa-circle-plus fa-xl" style="color: #9754cf;"></i> Add Task
+</a>
+<br />
+<br />
+
+@if (Model.Count() == 0)
+{
+    <center><h4>There is no Tasks </h4></center>
+}
+else{
+    <table class="table table-hover">
+        <tr style="background-color:#9754cf;color:white">
+            <th> Status</th>
+            <th>Task Name</th>
+            <th>Task Date</th>
+            <th>Priority</th>
+           <th>Edit</th>
+            <th>Delete</th>
+           
+
+        </tr>
+        @foreach(var item in Model)
+        {
+           
+            <tr data-id="@item.Id">
+                <td>
+
+                    @if (item.Deadline < DateTime.Now && item.IsCompleted == false)
+                    {
+                        <p style="color:red;font:larger bolder">Time out </p>
+                    }
+                    else if (item.IsCompleted == true)
+                    {
+                        <i class="fa-solid fa-circle-check fa-xl" style="color: #289f3c;"></i>
+                    }
+                    else if (item.Deadline >= DateTime.Now && item.IsCompleted == false)
+                    {
+                        <a href="#" class="complete-task" data-id="@item.Id">
+                            <i class="fa-regular fa-circle-check fa-xl" style="color: #289f3c;"></i>
+                        </a>
+                     }
+
+                </td>
+             <td>@item.Name</td>
+             <td>@item.Deadline</td>
+
+                <td><center><p style="background-color:@item.priority.Color;color:white;border-radius:9px">@item.priority.Name</p></center></td>
+                <td><a href="/Task/Update/@item.Id" class="btn-group-sm"><i class="fa-solid fa-pen-to-square fa-xl" style="color: #8151a9;"></i></a></td>
+                <td><a href="#" class="delete-btn" data-id="@item.Id">
+                        <i class="fa-solid fa-trash-can fa-xl" style="color: #8151a9;"></i>
+                    </a>
+                </td>
+            </tr>
+        }
+    </table>
+   
+    <button id="deleteCompletedTasks" class="btn btn-danger">
+        Delete Completed Tasks
+    </button>
+    <button id="deleteTimeOutTasks" class="btn btn-danger">
+        Delete All TimeOut Tasks
+    </button>
+}
+@section Scripts {
+    <script src="~/lib/sweetalert2/dist/sweetalert2.all.min.js"></script>
+
+   <script>
+       //filter function
+       function filterTasks() {
+        var selectedFilter = document.getElementById("taskFilter").value;
+        window.location.href = "@Url.Action("Index", "Task")?filter=" + selectedFilter;}
+
+
+
+       //delete function
+        $(".delete-btn").click(function () {
+            var id = $(this).data("id");
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#9754cf',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "@Url.Action("Delete", "Task")?id=" + id,
+                        type: "POST",
+                        success: function () {
+                            Swal.fire(
+                                'Deleted!',
+                                'The item has been deleted.',
+                                'success'
+                            ).then(() => {
+
+                                $(`tr[data-id="${id}"]`).remove();
+                                location.reload();
+                            });
+                        },
+                        error: function () {
+                            Swal.fire(
+                                'Error!',
+                                'There was an error deleting the item.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        });
+
+        //complete task function
+
+        $(document).ready(function () {
+            $('.complete-task').click(function () {
+                var taskId = $(this).data('id');
+
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("CompleteTask", "Task")",
+                    data: { id: taskId },
+                    success: function (data) {
+                        if (data.success) {
+                            Swal.fire(
+                                'Congratulations!',
+                                data.message,
+                                'success'
+                            ).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire(
+                                'Error!',
+                                data.message,
+                                'error'
+                            );
+                        }
+                    },
+                    error: function () {
+                        Swal.fire(
+                            'Error!',
+                            'There was an error completing the task.',
+                            'error'
+                        );
+                    }
+                });
+            });
+        });
+
+        //delete Completed Tasks
+        $(document).ready(function () {
+            $('#deleteCompletedTasks').click(function () {
+                $.ajax({
+                    url: '@Url.Action("RemoveCompletedTasks", "Task")',
+                    type: 'POST',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Success!',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                // Refresh the page or update the table
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                
+                                text: response.message,
+                                icon: 'warning',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function () {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'An error occurred while deleting the tasks.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            });
+        });
+
+        //deleteTimeOutTasks
+        $(document).ready(function () {
+            $('#deleteTimeOutTasks').click(function () {
+                $.ajax({
+                    url: '@Url.Action("RemoveTimeOutTasks", "Task")',
+                    type: 'POST',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Success!',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                // Refresh the page or update the table
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+
+                                text: response.message,
+                                icon: 'warning',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function () {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'An error occurred while deleting the tasks.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            });
+        });
+
+        </script>
+ }
+    
+   
+
+    
